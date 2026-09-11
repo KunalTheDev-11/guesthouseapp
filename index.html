@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Repository Directory</title>
+    <title>Repository Image Gallery</title>
     <style>
         :root {
             --bg-color: #f0f2f5;
@@ -46,16 +46,16 @@
 
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 24px;
             width: 100%;
-            max-width: 1000px;
+            max-width: 1100px;
         }
 
         .file-card {
             background: var(--card-bg);
             border-radius: 16px;
-            padding: 24px;
+            padding: 16px;
             text-decoration: none;
             color: var(--text-main);
             display: flex;
@@ -69,20 +69,29 @@
         }
 
         .file-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-6px);
             box-shadow: var(--shadow-hover);
             border-color: rgba(0, 102, 204, 0.1);
         }
 
-        .file-icon {
-            font-size: 3rem;
+        .thumbnail {
+            width: 100%;
+            height: 180px;
+            object-fit: cover; /* Keeps aspect ratio nice without stretching */
+            border-radius: 12px;
             margin-bottom: 16px;
+            background-color: #f5f5f7; /* Placeholder color before image loads */
+            border: 1px solid rgba(0,0,0,0.05);
         }
 
         .file-name {
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 600;
             word-break: break-all;
+            width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .loader {
@@ -97,37 +106,35 @@
             color: #ff3b30;
             grid-column: 1 / -1;
             text-align: center;
+            background: #ffebe9;
+            padding: 20px;
+            border-radius: 12px;
         }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>Project Files</h1>
-        <p>Select a file to view or download</p>
+        <h1>Image Gallery</h1>
+        <p>Select an image to view in full resolution</p>
     </header>
 
     <main class="grid" id="file-grid">
-        <div class="loader">Fetching files from GitHub...</div>
+        <div class="loader">Fetching images from GitHub...</div>
     </main>
 
     <script>
         // --- CONFIGURATION ---
-        // Replace these with your actual GitHub repository details
         const GITHUB_USERNAME = 'kunalthedev-11'; 
         const GITHUB_REPO = 'guesthouseapp';
         const FOLDER_PATH = ''; // Leave empty for root folder, or specify like 'assets/images'
         // ---------------------
 
-        function getFileIcon(filename) {
+        // Helper function to check if a file is an image
+        function isImage(filename) {
             const ext = filename.split('.').pop().toLowerCase();
             const imageExts = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'];
-            const codeExts = ['yml', 'yaml', 'json', 'js', 'html', 'css'];
-            
-            if (imageExts.includes(ext)) return '🖼️';
-            if (codeExts.includes(ext)) return '⚙️';
-            if (ext === 'pdf') return '📄';
-            return '📁';
+            return imageExts.includes(ext);
         }
 
         async function fetchDirectory() {
@@ -141,25 +148,34 @@
                 const files = await response.json();
                 grid.innerHTML = ''; // Clear loader
 
+                let imageCount = 0;
+
                 files.forEach(file => {
-                    // Skip the index.html file itself
-                    if (file.name === 'index.html') return;
+                    // Skip files that are not images (like .yml, .html, folders)
+                    if (!isImage(file.name)) return;
+                    
+                    imageCount++;
 
                     const card = document.createElement('a');
                     card.className = 'file-card';
-                    card.href = file.html_url; // Directs to GitHub view. Use file.download_url for direct raw file.
+                    // Use download_url to link directly to the raw image format
+                    card.href = file.download_url; 
                     card.target = '_blank';
                     card.rel = 'noopener noreferrer';
 
-                    const icon = getFileIcon(file.name);
-
+                    // Use the direct image url as the src for the thumbnail
                     card.innerHTML = `
-                        <div class="file-icon">${icon}</div>
+                        <img src="${file.download_url}" alt="${file.name}" class="thumbnail" loading="lazy" />
                         <div class="file-name">${file.name}</div>
                     `;
 
                     grid.appendChild(card);
                 });
+
+                // Handle the case where no images are found
+                if (imageCount === 0) {
+                    grid.innerHTML = `<div class="loader">No image files found in this directory.</div>`;
+                }
 
             } catch (error) {
                 grid.innerHTML = `<div class="error">⚠️ ${error.message}</div>`;
