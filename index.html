@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Repository Directory</title>
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --card-bg: #ffffff;
+            --text-main: #1d1d1f;
+            --text-muted: #86868b;
+            --accent: #0066cc;
+            --shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+            --shadow-hover: 0 10px 24px rgba(0, 102, 204, 0.15);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0 0 10px 0;
+            letter-spacing: -0.02em;
+        }
+
+        p {
+            color: var(--text-muted);
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        .file-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            text-decoration: none;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease;
+            cursor: pointer;
+            border: 1px solid rgba(0,0,0,0.02);
+        }
+
+        .file-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+            border-color: rgba(0, 102, 204, 0.1);
+        }
+
+        .file-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+        }
+
+        .file-name {
+            font-size: 1rem;
+            font-weight: 600;
+            word-break: break-all;
+        }
+
+        .loader {
+            text-align: center;
+            grid-column: 1 / -1;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            padding: 40px;
+        }
+
+        .error {
+            color: #ff3b30;
+            grid-column: 1 / -1;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Project Files</h1>
+        <p>Select a file to view or download</p>
+    </header>
+
+    <main class="grid" id="file-grid">
+        <div class="loader">Fetching files from GitHub...</div>
+    </main>
+
+    <script>
+        // --- CONFIGURATION ---
+        // Replace these with your actual GitHub repository details
+        const GITHUB_USERNAME = 'kunalthedev-11'; 
+        const GITHUB_REPO = 'guesthouseapp';
+        const FOLDER_PATH = ''; // Leave empty for root folder, or specify like 'assets/images'
+        // ---------------------
+
+        function getFileIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const imageExts = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'];
+            const codeExts = ['yml', 'yaml', 'json', 'js', 'html', 'css'];
+            
+            if (imageExts.includes(ext)) return '🖼️';
+            if (codeExts.includes(ext)) return '⚙️';
+            if (ext === 'pdf') return '📄';
+            return '📁';
+        }
+
+        async function fetchDirectory() {
+            const grid = document.getElementById('file-grid');
+            const apiUrl = `https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${FOLDER_PATH}`;
+
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error('Failed to fetch repository data. Check your username and repo name.');
+                
+                const files = await response.json();
+                grid.innerHTML = ''; // Clear loader
+
+                files.forEach(file => {
+                    // Skip the index.html file itself
+                    if (file.name === 'index.html') return;
+
+                    const card = document.createElement('a');
+                    card.className = 'file-card';
+                    card.href = file.html_url; // Directs to GitHub view. Use file.download_url for direct raw file.
+                    card.target = '_blank';
+                    card.rel = 'noopener noreferrer';
+
+                    const icon = getFileIcon(file.name);
+
+                    card.innerHTML = `
+                        <div class="file-icon">${icon}</div>
+                        <div class="file-name">${file.name}</div>
+                    `;
+
+                    grid.appendChild(card);
+                });
+
+            } catch (error) {
+                grid.innerHTML = `<div class="error">⚠️ ${error.message}</div>`;
+            }
+        }
+
+        // Initialize fetching on page load
+        fetchDirectory();
+    </script>
+</body>
+</html>
